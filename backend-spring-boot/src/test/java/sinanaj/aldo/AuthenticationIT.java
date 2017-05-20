@@ -12,7 +12,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 
 import static org.junit.Assert.assertEquals;
 
@@ -21,21 +20,31 @@ import static org.junit.Assert.assertEquals;
 public class AuthenticationIT {
 
     private TestRestTemplate template;
-    private URL base;
+    private String baseURL;
 
     @Value("${local.server.port}")
     private int port;
 
     @Before
     public void setUp() throws MalformedURLException {
-        template = new TestRestTemplate("admin", "WhisperAdmin");
-        base = new URL("http://localhost:" + port);
+        baseURL = "http://localhost:" + port;
     }
 
     @Test
     public void testAuthentication() throws IllegalStateException, IOException {
-        ResponseEntity<String> response = template.getForEntity(base.toString() + "/api", String.class);
+        template = new TestRestTemplate("admin", "WhisperAdmin");
+
+        ResponseEntity<String> response = template.getForEntity(baseURL + "/api", String.class);
 
         assertEquals("Authentication failed", HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void authenticationMustFail() throws IllegalStateException, IOException {
+        template = new TestRestTemplate("admin", "invalidPassword");
+
+        ResponseEntity<String> response = template.getForEntity(baseURL + "/api", String.class);
+
+        assertEquals("Authentication must failed", HttpStatus.UNAUTHORIZED, response.getStatusCode());
     }
 }

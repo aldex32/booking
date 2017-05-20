@@ -12,7 +12,7 @@
 ### Create user
 `create user 'admin'@'localhost' identified by 'admin' PASSWORD EXPIRE NEVER;`
 ### Grant user
-```$xslt
+```
 grant all on whisper.* to 'admin'@'localhost';
 grant all on whisper.* to 'admin'@'%';
 ```
@@ -26,7 +26,7 @@ grant all on whisper.* to 'admin'@'%';
 ### Run
 `mvn spring-boot:run`
 ### Login Credentials
-```$xslt
+```
 user: admin
 pass: WhisperAdmin
 ```
@@ -34,5 +34,7 @@ pass: WhisperAdmin
 `https://localhost:8443`
 ### API URL
 `https://localhost:8443/api/booking`
+### API Account
+`https://localhost:8443/account`
 ### Actuator monitor URL
 `https://localhost:8443/monitor`

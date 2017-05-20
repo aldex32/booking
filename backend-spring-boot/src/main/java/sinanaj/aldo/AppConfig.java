@@ -57,6 +57,7 @@ public class AppConfig {
         return args -> {
             Account account = new Account("admin", passwordEncoder().encode("WhisperAdmin"));
             account.setEnabled(true);
+            account.setRole("ROLE_ADMIN");
 
             accountRepository.save(account);
         };

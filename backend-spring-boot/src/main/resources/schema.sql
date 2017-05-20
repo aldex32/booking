@@ -6,6 +6,7 @@ CREATE TABLE account (
   USERNAME VARCHAR(60) NOT NULL,
   PASSWORD VARCHAR(60) NOT NULL, -- must be at least 60, since BCrypt algorithm generates a String of length 60
   ENABLED BOOL DEFAULT true,
+  ROLE VARCHAR(60) NOT NULL,
   CONSTRAINT UC_USERNAME UNIQUE (USERNAME)
 );
 

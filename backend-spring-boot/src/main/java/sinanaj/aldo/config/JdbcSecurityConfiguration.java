@@ -36,7 +36,8 @@ public class JdbcSecurityConfiguration extends GlobalAuthenticationConfigurerAda
                     account.isEnabled(),
                     account.isEnabled(),
                     account.isEnabled(),
-                    AuthorityUtils.createAuthorityList("ROLE_USER", "ROLE_ADMIN")
+                    AuthorityUtils.createAuthorityList(account.getRole())
+//                    AuthorityUtils.createAuthorityList("ROLE_USER", "ROLE_ADMIN")
             );
         };
     }
