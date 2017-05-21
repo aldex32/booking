@@ -34,7 +34,7 @@ pass: WhisperAdmin
 `https://localhost:8443`
 ### API URL
 `https://localhost:8443/api/booking`
-### API Account
-`https://localhost:8443/account`
+### Admin API Account
+`https://localhost:8443/account/admin`
 ### Actuator monitor URL
 `https://localhost:8443/monitor`

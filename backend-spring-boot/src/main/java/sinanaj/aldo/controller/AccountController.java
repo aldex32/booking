@@ -28,7 +28,7 @@ public class AccountController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @RequestMapping(method = RequestMethod.POST, produces = MediaType.TEXT_PLAIN_VALUE)
+    @RequestMapping(value = "/admin", method = RequestMethod.POST, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> register(@RequestBody @NotNull Account account) {
 
         account.setPassword(passwordEncoder.encode(account.getPassword()));
@@ -37,7 +37,7 @@ public class AccountController {
         return ok("Account registered");
     }
 
-    @RequestMapping(value = "/{username}", method = RequestMethod.PUT, produces = MediaType.TEXT_PLAIN_VALUE)
+    @RequestMapping(value = "/admin/{username}", method = RequestMethod.PUT, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> update(
             @PathVariable("username") @NotNull String username,
             @RequestBody @NotNull Account account) {
@@ -82,7 +82,7 @@ public class AccountController {
         return ok("Password updated");
     }
 
-    @RequestMapping(value = "/{username}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/admin/{username}", method = RequestMethod.DELETE)
     public ResponseEntity<String> deleteAccount(@PathVariable(value = "username") @NotNull String username) {
 
         Account currentAccount = accountRepository.findAccountByUsername(username);

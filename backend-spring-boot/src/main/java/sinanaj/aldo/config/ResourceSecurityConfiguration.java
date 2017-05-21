@@ -10,8 +10,11 @@ public class ResourceSecurityConfiguration extends WebSecurityConfigurerAdapter 
     @Override
     protected void configure(HttpSecurity httpSecurity) throws Exception {
 
-        httpSecurity
-                .authorizeRequests().anyRequest().fullyAuthenticated()
+        httpSecurity.authorizeRequests()
+//                .anyRequest().fullyAuthenticated()
+                .antMatchers("/account/update-password/**").access("hasRole('USER')")
+                .antMatchers("/account/admin/**").access("hasRole('ADMIN')")
+                .antMatchers("/api/booking/**").access("hasRole('ADMIN') or hasRole('USER')")
                 .and()
                 .httpBasic()
                 .and()
