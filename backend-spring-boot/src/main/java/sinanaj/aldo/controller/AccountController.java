@@ -58,10 +58,10 @@ public class AccountController {
         return ResponseEntity.ok("Account updated");
     }
 
-    @RequestMapping(value = "/update-password/{username}", method = RequestMethod.POST, produces = MediaType.TEXT_PLAIN_VALUE)
+    @RequestMapping(value = "/update-password/{username}", method = RequestMethod.PUT, produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> updatePassword(
             @PathVariable("username") @NotNull String username,
-            @RequestBody @NotNull Account account,
+            @RequestParam(value = "oldPassword") @NotNull String oldPassword,
             @RequestParam(value = "newPassword") @NotNull String newPassword) {
 
         Account currentAccount = accountRepository.findAccountByUsername(username);
@@ -70,7 +70,7 @@ public class AccountController {
             return ResponseEntity.badRequest().body("Account not found");
         }
 
-        boolean oldPasswordMatch = passwordEncoder.matches(account.getPassword(), currentAccount.getPassword());
+        boolean oldPasswordMatch = passwordEncoder.matches(oldPassword, currentAccount.getPassword());
 
         if (!oldPasswordMatch) {
             return ResponseEntity.badRequest().body("Old password not correct");

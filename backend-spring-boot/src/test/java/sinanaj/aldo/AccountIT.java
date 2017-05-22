@@ -32,8 +32,11 @@ public class AccountIT {
     private static final String TEST_NEW_PASSWORD = "newPass";
     private static final String ROLE_USER = "ROLE_USER";
     private static final String ROLE_ADMIN = "ROLE_ADMIN";
+    private static final String USERNAME_PARAM = "username";
+    private static final String OLD_PASSWORD_PARAM = "oldPassword";
+    private static final String NEW_PASSWORD_PARAM = "newPassword";
 
-    private TestRestTemplate restTemplate = new TestRestTemplate("admin", "WhisperAdmin");
+    private final TestRestTemplate restTemplate = new TestRestTemplate("admin", "WhisperAdmin");
     private String baseURL;
 
     @Value("${local.server.port}")
@@ -50,7 +53,7 @@ public class AccountIT {
         account.setEnabled(true);
         account.setRole(ROLE_USER);
 
-        final ResponseEntity<String> responseEntity = restTemplate.postForEntity(baseURL + "/account", account, String.class);
+        final ResponseEntity<String> responseEntity = restTemplate.postForEntity(baseURL + "/account/admin", account, String.class);
 
         assertEquals("Account registration failed", HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Account registered", responseEntity.getBody());
@@ -58,17 +61,14 @@ public class AccountIT {
 
     @Test
     public void test2_updatePassword() {
-        final Account account = new Account(TEST_USERNAME, TEST_PASSWORD);
-        account.setEnabled(true);
-        account.setRole(ROLE_USER);
-
-        Map<String, String> uriParams = Collections.singletonMap("username", TEST_USERNAME);
+        final Map<String, String> uriParams = Collections.singletonMap(USERNAME_PARAM, TEST_USERNAME);
 
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(baseURL + "/account/update-password/{username}")
-                .queryParam("newPassword", TEST_NEW_PASSWORD);
+                .queryParam(OLD_PASSWORD_PARAM, TEST_PASSWORD)
+                .queryParam(NEW_PASSWORD_PARAM, TEST_NEW_PASSWORD);
 
         final ResponseEntity<String> responseEntity = restTemplate.withBasicAuth(TEST_USERNAME, TEST_PASSWORD)
-                .postForEntity(uriBuilder.buildAndExpand(uriParams).toUriString(), account, String.class);
+                .exchange(uriBuilder.buildAndExpand(uriParams).toUriString(), HttpMethod.PUT, HttpEntity.EMPTY, String.class);
 
         assertEquals("Password updating failed", HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Password updated", responseEntity.getBody());
@@ -77,17 +77,14 @@ public class AccountIT {
     @Test
     public void test3_updatePasswordErrorAccountNotFound() {
         final String accountNotExist = "accountNotExist";
-        final Account account = new Account(accountNotExist, "password");
-        account.setEnabled(true);
-        account.setRole(ROLE_USER);
-
-        Map<String, String> uriParams = Collections.singletonMap("username", accountNotExist);
+        final Map<String, String> uriParams = Collections.singletonMap(USERNAME_PARAM, accountNotExist);
 
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(baseURL + "/account/update-password/{username}")
-                .queryParam("newPassword", TEST_NEW_PASSWORD);
+                .queryParam(OLD_PASSWORD_PARAM, TEST_PASSWORD)
+                .queryParam(NEW_PASSWORD_PARAM, TEST_NEW_PASSWORD);
 
         final ResponseEntity<String> responseEntity = restTemplate.withBasicAuth(TEST_USERNAME, TEST_NEW_PASSWORD)
-                .postForEntity(uriBuilder.buildAndExpand(uriParams).toUriString(), account, String.class);
+                .exchange(uriBuilder.buildAndExpand(uriParams).toUriString(), HttpMethod.PUT, HttpEntity.EMPTY, String.class);
 
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
         assertEquals("Account not found", responseEntity.getBody());
@@ -95,17 +92,15 @@ public class AccountIT {
 
     @Test
     public void test4_updatePasswordErrorOldPasswordNotMatching() {
-        final Account account = new Account("test", "pass");
-        account.setEnabled(true);
-        account.setRole(ROLE_USER);
-
-        Map<String, String> uriParams = Collections.singletonMap("username", TEST_USERNAME);
+        final String wrongOldPassword = "wrongPassword";
+        final Map<String, String> uriParams = Collections.singletonMap(USERNAME_PARAM, TEST_USERNAME);
 
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(baseURL + "/account/update-password/{username}")
-                .queryParam("newPassword", TEST_NEW_PASSWORD);
+                .queryParam(OLD_PASSWORD_PARAM, wrongOldPassword)
+                .queryParam(NEW_PASSWORD_PARAM, TEST_NEW_PASSWORD);
 
         final ResponseEntity<String> responseEntity = restTemplate.withBasicAuth(TEST_USERNAME, TEST_NEW_PASSWORD)
-                .postForEntity(uriBuilder.buildAndExpand(uriParams).toUriString(), account, String.class);
+                .exchange(uriBuilder.buildAndExpand(uriParams).toUriString(), HttpMethod.PUT, HttpEntity.EMPTY, String.class);
 
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
         assertEquals("Old password not correct", responseEntity.getBody());
@@ -113,14 +108,13 @@ public class AccountIT {
 
     @Test
     public void test5_updateAccount() {
-        final Account account = new Account("test", "pass");
+        final Account account = new Account(TEST_USERNAME, TEST_NEW_PASSWORD);
         account.setEnabled(false);
         account.setRole(ROLE_ADMIN);
-
         final HttpEntity<Account> requestEntity = new HttpEntity<>(account);
 
         final ResponseEntity<String> responseEntity =
-                restTemplate.exchange(baseURL + "/account/{username}", HttpMethod.PUT, requestEntity, String.class, TEST_USERNAME);
+                restTemplate.exchange(baseURL + "/account/admin/{username}", HttpMethod.PUT, requestEntity, String.class, TEST_USERNAME);
 
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Account updated", responseEntity.getBody());
@@ -129,7 +123,7 @@ public class AccountIT {
     @Test
     public void test6_deleteAccount() {
         final ResponseEntity<String> responseEntity =
-                restTemplate.exchange(baseURL + "/account/{username}", HttpMethod.DELETE, null, String.class, TEST_USERNAME);
+                restTemplate.exchange(baseURL + "/account/admin/{username}", HttpMethod.DELETE, HttpEntity.EMPTY, String.class, TEST_USERNAME);
 
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Account deleted", responseEntity.getBody());
