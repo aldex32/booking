@@ -18,7 +18,7 @@ public class Account {
     private boolean enabled;
     private String role;
 
-    Account() {}
+    public Account() {}
 
     public Account(String username, String password) {
         this.username = username;

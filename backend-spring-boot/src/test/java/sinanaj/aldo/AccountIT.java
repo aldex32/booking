@@ -5,6 +5,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -27,6 +28,8 @@ import static org.junit.Assert.assertEquals;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AccountIT {
 
+    private static final String ADMIN_USER = "admin";
+    private static final String ADMIN_PASSWORD = "WhisperAdmin";
     private static final String TEST_USERNAME = "test";
     private static final String TEST_PASSWORD = "password";
     private static final String TEST_NEW_PASSWORD = "newPass";
@@ -36,8 +39,10 @@ public class AccountIT {
     private static final String OLD_PASSWORD_PARAM = "oldPassword";
     private static final String NEW_PASSWORD_PARAM = "newPassword";
 
-    private final TestRestTemplate restTemplate = new TestRestTemplate("admin", "WhisperAdmin");
     private String baseURL;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
 
     @Value("${local.server.port}")
     private int port;
@@ -53,14 +58,25 @@ public class AccountIT {
         account.setEnabled(true);
         account.setRole(ROLE_USER);
 
-        final ResponseEntity<String> responseEntity = restTemplate.postForEntity(baseURL + "/account/admin", account, String.class);
+        final ResponseEntity<String> responseEntity = restTemplate.withBasicAuth(ADMIN_USER, ADMIN_PASSWORD)
+                .postForEntity(baseURL + "/account/admin", account, String.class);
 
         assertEquals("Account registration failed", HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Account registered", responseEntity.getBody());
     }
 
     @Test
-    public void test2_updatePassword() {
+    public void test2_registerAccountWithRoleUserIsForbidden() {
+        final Account account = new Account();
+
+        final ResponseEntity<String> responseEntity = restTemplate.withBasicAuth(TEST_USERNAME, TEST_PASSWORD)
+                .postForEntity(baseURL + "/account/admin", account, String.class);
+
+        assertEquals("Account registration is forbidden", HttpStatus.FORBIDDEN, responseEntity.getStatusCode());
+    }
+
+    @Test
+    public void test3_updatePassword() {
         final Map<String, String> uriParams = Collections.singletonMap(USERNAME_PARAM, TEST_USERNAME);
 
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(baseURL + "/account/update-password/{username}")
@@ -75,7 +91,7 @@ public class AccountIT {
     }
 
     @Test
-    public void test3_updatePasswordErrorAccountNotFound() {
+    public void test4_updatePasswordErrorAccountNotFound() {
         final String accountNotExist = "accountNotExist";
         final Map<String, String> uriParams = Collections.singletonMap(USERNAME_PARAM, accountNotExist);
 
@@ -91,7 +107,7 @@ public class AccountIT {
     }
 
     @Test
-    public void test4_updatePasswordErrorOldPasswordNotMatching() {
+    public void test5_updatePasswordErrorOldPasswordNotMatching() {
         final String wrongOldPassword = "wrongPassword";
         final Map<String, String> uriParams = Collections.singletonMap(USERNAME_PARAM, TEST_USERNAME);
 
@@ -107,23 +123,34 @@ public class AccountIT {
     }
 
     @Test
-    public void test5_updateAccount() {
+    public void test6_updateAccountWithRoleUserIsForbidden() {
+        final Account account = new Account();
+        final HttpEntity<Account> requestEntity = new HttpEntity<>(account);
+
+        final ResponseEntity<String> responseEntity = restTemplate.withBasicAuth(TEST_USERNAME, TEST_NEW_PASSWORD)
+                .exchange(baseURL + "/account/admin/{username}", HttpMethod.PUT, requestEntity, String.class, TEST_USERNAME);
+
+        assertEquals("Account update is forbidden", HttpStatus.FORBIDDEN, responseEntity.getStatusCode());
+    }
+
+    @Test
+    public void test7_updateAccount() {
         final Account account = new Account(TEST_USERNAME, TEST_NEW_PASSWORD);
         account.setEnabled(false);
         account.setRole(ROLE_ADMIN);
         final HttpEntity<Account> requestEntity = new HttpEntity<>(account);
 
-        final ResponseEntity<String> responseEntity =
-                restTemplate.exchange(baseURL + "/account/admin/{username}", HttpMethod.PUT, requestEntity, String.class, TEST_USERNAME);
+        final ResponseEntity<String> responseEntity = restTemplate.withBasicAuth(ADMIN_USER, ADMIN_PASSWORD)
+                .exchange(baseURL + "/account/admin/{username}", HttpMethod.PUT, requestEntity, String.class, TEST_USERNAME);
 
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Account updated", responseEntity.getBody());
     }
 
     @Test
-    public void test6_deleteAccount() {
-        final ResponseEntity<String> responseEntity =
-                restTemplate.exchange(baseURL + "/account/admin/{username}", HttpMethod.DELETE, HttpEntity.EMPTY, String.class, TEST_USERNAME);
+    public void test8_deleteAccount() {
+        final ResponseEntity<String> responseEntity = restTemplate.withBasicAuth(ADMIN_USER, ADMIN_PASSWORD)
+                .exchange(baseURL + "/account/admin/{username}", HttpMethod.DELETE, HttpEntity.EMPTY, String.class, TEST_USERNAME);
 
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertEquals("Account deleted", responseEntity.getBody());
